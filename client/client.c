@@ -8,25 +8,33 @@
 #include <strings.h>
 #include <sys/socket.h>
 
+char* username;
+
 // Compile and link with ptread
 void *listener(void *socket) {
 
 	int socketfd = *(int*)socket;
 
+	// Send the user name
+	write(socketfd, username, strlen(username));
+
 	char message[255];
-	while (read(socketfd, &message, sizeof(message))) {
-		/* write(fileno(stdout), &message, sizeof(message)); */
-		printf("%s", message);
+	int rb;
+	while ((rb =read(fileno(stdin), message, sizeof(message)))) {
+		// The buffer has trash from previous messages from this point
+		message[rb] = '\0';
+		write(socketfd, message, strlen(message));
 	}
   pthread_exit(NULL);
 }
 
 int main(int argc, char* argv[]) {
 	if (argc < 4) {
-		printf("Invalid number of argumet");
+		printf("Invalid number of argument");
 		return 1;
 	}
 
+	// Basic connection stuff
 	struct hostent *serverinfo = gethostbyname(argv[1]);
 	struct sockaddr_in serverAddress;
 
@@ -36,23 +44,25 @@ int main(int argc, char* argv[]) {
 
 	bcopy((char *)serverinfo->h_addr, (char *)&serverAddress.sin_addr, serverinfo->h_length);
 	int sockfd = socket(AF_INET, SOCK_STREAM, 0);
-	connect(sockfd, (struct sockaddr *)&serverAddress, sizeof(serverAddress));
 
-	char *username = argv[3];
-	write(sockfd, &username, sizeof(username));
+	// Connection
+	if(connect(sockfd, (struct sockaddr *)&serverAddress, sizeof(serverAddress)) == 0) {
 
-	pthread_t lis;
-	pthread_create(&lis, NULL, listener, (void*)&sockfd);
+		// If connection is successful create the thread that listen the keyboard
+		username = argv[3];
+		pthread_t lis;
+		pthread_create(&lis, NULL, listener, (void*)&sockfd);
 
-	char message[255];
+		char message[255];
 
-	while (read(fileno(stdin), &message, sizeof(message))) {
-		write(sockfd, &message, sizeof(message));
-		if (strcmp(message, "bye")) {
-			close(sockfd);
-			return 0;
+		// Receive message from the server
+		int rb;
+		while ((rb = read(sockfd, message, sizeof(message)))) {
+			// The buffer has trash from previous messages from this point
+			message[rb] = '\0';
+			printf(">%s", message);
 		}
 	}
 
-	pthread_exit(NULL);
+	return 0;
 }
