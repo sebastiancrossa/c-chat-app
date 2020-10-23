@@ -18,9 +18,9 @@ void *listener(void *socket) {
 	// Send the user name
 	write(socketfd, username, strlen(username));
 
-	char message[255];
+	char message[256];
 	int rb;
-	while ((rb =read(fileno(stdin), message, sizeof(message)))) {
+	while ((rb =read(fileno(stdin), message, sizeof(message) - 1))) {
 		// The buffer has trash from previous messages from this point
 		message[rb] = '\0';
 		write(socketfd, message, strlen(message));
@@ -53,11 +53,11 @@ int main(int argc, char* argv[]) {
 		pthread_t lis;
 		pthread_create(&lis, NULL, listener, (void*)&sockfd);
 
-		char message[255];
+		char message[256];
 
 		// Receive message from the server
 		int rb;
-		while ((rb = read(sockfd, message, sizeof(message)))) {
+		while ((rb = read(sockfd, message, sizeof(message) - 1))) {
 			// The buffer has trash from previous messages from this point
 			message[rb] = '\0';
 			printf(">%s", message);

@@ -91,18 +91,18 @@ void *listener(void *data) {
 	//Read the username and greet the client
 	char username[32];
 	char send[255+64];
-	read(socketfd, username, sizeof(username));
+	read(socketfd, username, sizeof(username)-1);
 	printf("%s se conecto\n", username);
 	sprintf(send, "bienvenido %s\n", username);
 	write(socketfd, send, strlen(send));
 
 	sprintf(send, "%s se conecto\n", username);
 	sendAll(send, index);
-	char message[255];
+	char message[256];
 	int rb;
 	bool active = true;
 
-	while (active && (rb = read(socketfd, message, sizeof(message)))) {
+	while (active && (rb = read(socketfd, message, sizeof(message) - 1))) {
 		if (rb == 0) {
 			break;
 		}
